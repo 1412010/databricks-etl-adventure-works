@@ -20,8 +20,8 @@ spark.conf.set(f"fs.azure.account.oauth2.client.endpoint.{STORAGE_ACCOUNT}.dfs.c
 
 # COMMAND ----------
 
-path = f"bronze_aw/Sales/Customer"
-# CONNECTION_URI = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/synapsecontainer/bronze_aw/Sales/Customer"
+path = f"raw_adventure_works/Sales/Customer"
+# CONNECTION_URI = f"https://{STORAGE_ACCOUNT}.blob.core.windows.net/synapsecontainer/{path}"
 CONNECTION_URI = f"abfss://{CONTAINTER_NAME}@{STORAGE_ACCOUNT}.dfs.core.windows.net/{path}"
 
 print(CONNECTION_URI)
@@ -34,8 +34,41 @@ display(df)
 
 # COMMAND ----------
 
-CATALOG = "DEV"
+current_catalog = spark.sql("SELECT current_catalog() as catalog").first()[0]
+print(current_catalog)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT CURRENT_METASTORE();
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC USE CATALOG 'hive_metastore';
+# MAGIC CREATE CATALOG `PROD`;
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC USE CATALOG 'spark_catalog';
+# MAGIC CREATE SCHEMA IF NOT EXISTS `bronze`;
+
+# COMMAND ----------
+
+
+CATALOG = current_catalog 
 SCHEMA = "bronze"
 table_name = "Customer"
 
-df.write.format("delta").mode("overwrite").saveAsTable(f".Volumes.{CATALOG}.{SCHEMA}.{table_name}")
+to_table_path = f"{CATALOG}.{SCHEMA}.{table_name}"
+
+df.write.format("delta").mode("overwrite").saveAsTable(to_table_path)
+
+# COMMAND ----------
+
+
